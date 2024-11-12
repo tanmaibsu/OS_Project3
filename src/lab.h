@@ -1,4 +1,3 @@
-/**Update this file with the starter code**/
 #ifndef LAB_H
 #define LAB_H
 #include <pthread.h>
@@ -60,6 +59,7 @@ extern "C"
     int start;
     int end;
     pthread_t tid;
+    pthread_mutex_t lock;
   };
 
   /**
