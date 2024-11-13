@@ -12,13 +12,11 @@
  */
 static void insertion_sort(int A[], int p, int r)
 {
-  int j;
-
-  for (j = p + 1; j <= r; j++)
+  for (int j = p + 1; j <= r; j++)
   {
     int key = A[j];
     int i = j - 1;
-    while ((i > p - 1) && (A[i] > key))
+    while (i >= p && A[i] > key)
     {
       A[i + 1] = A[i];
       i--;
@@ -48,26 +46,29 @@ void *parallel_mergesort(void *args)
  * @param n The size of the array
  * @param num_threads The number of threads to use.
  */
-void mergesort_mt(int *A, int n, int num_thread)
+void mergesort_mt(int *A, int n, int num_threads)
 {
-  struct parallel_args *args = (struct parallel_args *)malloc(sizeof(struct parallel_args) * num_thread);
-  int chunk_size = n / num_thread;
-  pthread_t *threads = (pthread_t *)malloc(sizeof(pthread_t) * num_thread);
+  struct parallel_args *args = malloc(sizeof(struct parallel_args) * num_threads);
+  pthread_t *threads = malloc(sizeof(pthread_t) * num_threads);
+  int chunk_size = n / num_threads;
 
-  for (int i = 0; i < num_thread; i++)
+  // Create threads to sort each chunk
+  for (int i = 0; i < num_threads; i++)
   {
-    pthread_mutex_lock(&args[i].lock);
     args[i].A = A;
     args[i].start = i * chunk_size;
-    args[i].end = (i == num_thread - 1) ? n - 1 : (i + 1) * chunk_size - 1;
-    pthread_create(&threads[i], NULL, parallel_mergesort, (void *)&args[i]);
+    args[i].end = (i == num_threads - 1) ? n - 1 : (i + 1) * chunk_size - 1;
+    pthread_create(&threads[i], NULL, parallel_mergesort, &args[i]);
   }
-  for (int i = 0; i < num_thread; i++)
+
+  // Wait for all threads to complete
+  for (int i = 0; i < num_threads; i++)
   {
     pthread_join(threads[i], NULL);
   }
-  int step_size = chunk_size;
-  while (step_size < n)
+
+  // Merge sorted chunks
+  for (int step_size = chunk_size; step_size < n; step_size *= 2)
   {
     for (int i = 0; i < n; i += 2 * step_size)
     {
@@ -78,7 +79,6 @@ void mergesort_mt(int *A, int n, int num_thread)
         merge_s(A, i, mid, end);
       }
     }
-    step_size *= 2;
   }
 
   free(args);
